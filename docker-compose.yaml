@@ -25,10 +25,9 @@ services:
       - CPU_LIMIT=${CPU_LIMIT:-1.0}
       - HUB_API_TOKEN=${HUB_API_TOKEN:-}
       - PUBLIC_URL=${PUBLIC_URL:-}
-    ports:
-      - "8000:8000"   # transitional direct access; remove once TLS via Traefik is verified
     networks:
       - default
+    # No published host port — reachable only via Traefik (https://lab.bytek.tech).
     # Routed by the existing Traefik (traefik-luku, host-mode) with Let's Encrypt TLS.
     labels:
       - "traefik.enable=true"
