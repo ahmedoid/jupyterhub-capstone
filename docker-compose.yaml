@@ -18,7 +18,7 @@ services:
       - hub-data:/srv/jupyterhub
     environment:
       - DOCKER_NETWORK_NAME=jupyterhub_default
-      - DOCKER_NOTEBOOK_IMAGE=capstone-notebook:latest
+      - DOCKER_NOTEBOOK_IMAGE=capstone-notebook:v2
       - HUB_CONNECT_IP=jupyterhub
       - ADMIN_USERS=${ADMIN_USERS:-admin}
       - MEM_LIMIT=${MEM_LIMIT:-1G}
@@ -39,7 +39,7 @@ services:
 
   notebook-image:
     build: ./notebook
-    image: capstone-notebook:latest
+    image: capstone-notebook:v2
     command: ["true"]
     restart: "no"
 
