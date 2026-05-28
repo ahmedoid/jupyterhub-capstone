@@ -24,6 +24,12 @@ c.JupyterHub.hub_ip = "0.0.0.0"
 c.JupyterHub.hub_connect_ip = os.environ.get("HUB_CONNECT_IP", "jupyterhub")
 c.JupyterHub.port = 8000
 
+# Behind a TLS reverse proxy (Traefik) — tell the hub its external URL so OAuth/login
+# redirects use https://lab.bytek.tech instead of the internal http://...:8000.
+_pub = os.environ.get("PUBLIC_URL")
+if _pub:
+    c.JupyterHub.public_url = _pub
+
 # ── Auth: students self-register, an admin approves (no open self-serve) ────
 c.JupyterHub.authenticator_class = "nativeauthenticator.NativeAuthenticator"
 c.NativeAuthenticator.open_signup = False

@@ -24,10 +24,18 @@ services:
       - MEM_LIMIT=${MEM_LIMIT:-1G}
       - CPU_LIMIT=${CPU_LIMIT:-1.0}
       - HUB_API_TOKEN=${HUB_API_TOKEN:-}
+      - PUBLIC_URL=${PUBLIC_URL:-}
     ports:
-      - "8000:8000"
+      - "8000:8000"   # transitional direct access; remove once TLS via Traefik is verified
     networks:
       - default
+    # Routed by the existing Traefik (traefik-luku, host-mode) with Let's Encrypt TLS.
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jupyterhub.rule=Host(`lab.bytek.tech`)"
+      - "traefik.http.routers.jupyterhub.entrypoints=websecure"
+      - "traefik.http.routers.jupyterhub.tls.certresolver=letsencrypt"
+      - "traefik.http.services.jupyterhub.loadbalancer.server.port=8000"
 
   notebook-image:
     build: ./notebook
