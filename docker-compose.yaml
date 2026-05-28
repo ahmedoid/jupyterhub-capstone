@@ -9,7 +9,7 @@
 services:
   jupyterhub:
     build: .
-    image: capstone-jupyterhub:latest
+    image: capstone-jupyterhub:sso1
     container_name: jupyterhub
     restart: unless-stopped
     volumes:
