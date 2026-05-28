@@ -1,0 +1,46 @@
+import os
+
+c = get_config()  # noqa
+
+# ── Spawner: each student gets their OWN container (isolation) ──────────────
+# Students run arbitrary code, so never share a process space.
+c.JupyterHub.spawner_class = "docker"
+c.DockerSpawner.image = os.environ.get("DOCKER_NOTEBOOK_IMAGE", "capstone-notebook:latest")
+# Use the local image built by the stack (don't try to pull it from a registry).
+c.DockerSpawner.pull_policy = os.environ.get("PULL_POLICY", "ifnotpresent")
+# Spawned containers join the stack network so they can reach the hub.
+c.DockerSpawner.network_name = os.environ["DOCKER_NETWORK_NAME"]
+c.DockerSpawner.use_internal_ip = True
+c.DockerSpawner.remove = True  # tear down the container when the server stops
+# Resource caps per student (the box is shared with Judge0 — keep it bounded).
+c.DockerSpawner.mem_limit = os.environ.get("MEM_LIMIT", "1G")
+c.DockerSpawner.cpu_limit = float(os.environ.get("CPU_LIMIT", "1.0"))
+# Persist each student's notebooks across restarts (named volume per user).
+c.DockerSpawner.volumes = {"jupyterhub-user-{username}": "/home/jovyan/work"}
+c.DockerSpawner.notebook_dir = "/home/jovyan/work"
+
+# ── Hub reachability from the spawned containers ───────────────────────────
+c.JupyterHub.hub_ip = "0.0.0.0"
+c.JupyterHub.hub_connect_ip = os.environ.get("HUB_CONNECT_IP", "jupyterhub")
+c.JupyterHub.port = 8000
+
+# ── Auth: students self-register, an admin approves (no open self-serve) ────
+c.JupyterHub.authenticator_class = "nativeauthenticator.NativeAuthenticator"
+c.NativeAuthenticator.open_signup = False
+c.NativeAuthenticator.minimum_password_length = 8
+c.Authenticator.admin_users = set(filter(None, os.environ.get("ADMIN_USERS", "admin").split(",")))
+c.Authenticator.allow_all = True  # JupyterHub 5 defaults to deny-all; allow any authorized native user
+
+# ── Persist hub state on a named volume ────────────────────────────────────
+c.JupyterHub.db_url = "sqlite:////srv/jupyterhub/jupyterhub.sqlite"
+c.JupyterHub.cookie_secret_file = "/srv/jupyterhub/cookie_secret"
+
+# ── Optional admin API token (for programmatic checks / future app integration) ──
+_tok = os.environ.get("HUB_API_TOKEN")
+if _tok:
+    c.JupyterHub.services = [{"name": "admin-api", "api_token": _tok}]
+    c.JupyterHub.load_roles = [{
+        "name": "admin-api-role",
+        "scopes": ["admin:users", "admin:servers", "read:hub"],
+        "services": ["admin-api"],
+    }]

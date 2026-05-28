@@ -1,0 +1,43 @@
+# Dockerized JupyterHub for capstone projects — deployed on the VPS via the Docker Manager API
+# (build-on-VPS from this repo). Each student gets an isolated DockerSpawner container with the
+# scientific-Python + LangChain stack. Students bring their own LLM keys.
+#
+# Two services:
+#   jupyterhub      — the hub + proxy (public on :8000 for now; route via Traefik + TLS later).
+#   notebook-image  — a one-shot that just BUILDS the single-user image (capstone-notebook:latest)
+#                     into the host's docker cache so DockerSpawner can launch it. It then exits.
+services:
+  jupyterhub:
+    build: .
+    image: capstone-jupyterhub:latest
+    container_name: jupyterhub
+    restart: unless-stopped
+    volumes:
+      # DockerSpawner drives the host docker daemon to create per-user containers.
+      - /var/run/docker.sock:/var/run/docker.sock:rw
+      - hub-data:/srv/jupyterhub
+    environment:
+      - DOCKER_NETWORK_NAME=jupyterhub_default
+      - DOCKER_NOTEBOOK_IMAGE=capstone-notebook:latest
+      - HUB_CONNECT_IP=jupyterhub
+      - ADMIN_USERS=${ADMIN_USERS:-admin}
+      - MEM_LIMIT=${MEM_LIMIT:-1G}
+      - CPU_LIMIT=${CPU_LIMIT:-1.0}
+      - HUB_API_TOKEN=${HUB_API_TOKEN:-}
+    ports:
+      - "8000:8000"
+    networks:
+      - default
+
+  notebook-image:
+    build: ./notebook
+    image: capstone-notebook:latest
+    command: ["true"]
+    restart: "no"
+
+networks:
+  default:
+    name: jupyterhub_default
+
+volumes:
+  hub-data:
