@@ -44,12 +44,32 @@ c.Authenticator.allow_all = True  # JupyterHub 5 defaults to deny-all; identity 
 c.JupyterHub.db_url = "sqlite:////srv/jupyterhub/jupyterhub.sqlite"
 c.JupyterHub.cookie_secret_file = "/srv/jupyterhub/cookie_secret"
 
-# ── Optional admin API token (for programmatic checks / future app integration) ──
+# ── Services + roles ───────────────────────────────────────────────────────
+_services = []
+_roles = []
+
+# Optional admin API token (for programmatic checks / app integration).
 _tok = os.environ.get("HUB_API_TOKEN")
 if _tok:
-    c.JupyterHub.services = [{"name": "admin-api", "api_token": _tok}]
-    c.JupyterHub.load_roles = [{
+    _services.append({"name": "admin-api", "api_token": _tok})
+    _roles.append({
         "name": "admin-api-role",
         "scopes": ["admin:users", "admin:servers", "read:hub"],
         "services": ["admin-api"],
-    }]
+    })
+
+# Idle-culler: stop a student's container after it's idle for a while, to reclaim RAM
+# (the box is shared with Judge0). Timeout configurable via CULL_TIMEOUT (default 3600s).
+_cull = int(os.environ.get("CULL_TIMEOUT", "3600"))
+_services.append({
+    "name": "idle-culler",
+    "command": ["python3", "-m", "jupyterhub_idle_culler", f"--timeout={_cull}"],
+})
+_roles.append({
+    "name": "idle-culler",
+    "scopes": ["list:users", "read:users:activity", "read:servers", "delete:servers"],
+    "services": ["idle-culler"],
+})
+
+c.JupyterHub.services = _services
+c.JupyterHub.load_roles = _roles
