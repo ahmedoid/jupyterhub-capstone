@@ -25,6 +25,7 @@ services:
       - CPU_LIMIT=${CPU_LIMIT:-1.0}
       - HUB_API_TOKEN=${HUB_API_TOKEN:-}
       - PUBLIC_URL=${PUBLIC_URL:-}
+      - LAB_LAUNCH_SECRET=${LAB_LAUNCH_SECRET:-}
     networks:
       - default
     # No published host port — reachable only via Traefik (https://lab.bytek.tech).

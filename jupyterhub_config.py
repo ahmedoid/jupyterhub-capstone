@@ -30,12 +30,15 @@ _pub = os.environ.get("PUBLIC_URL")
 if _pub:
     c.JupyterHub.public_url = _pub
 
-# ── Auth: students self-register, an admin approves (no open self-serve) ────
-c.JupyterHub.authenticator_class = "nativeauthenticator.NativeAuthenticator"
-c.NativeAuthenticator.open_signup = False
-c.NativeAuthenticator.minimum_password_length = 8
-c.Authenticator.admin_users = set(filter(None, os.environ.get("ADMIN_USERS", "admin").split(",")))
-c.Authenticator.allow_all = True  # JupyterHub 5 defaults to deny-all; allow any authorized native user
+# ── Auth: SSO via launch token from the app (no login form) ────────────────
+import sys as _sys
+_sys.path.insert(0, "/srv/jupyterhub")
+from labauth import username_from_email as _slug  # noqa: E402
+
+c.JupyterHub.authenticator_class = "labauth.LabAuthenticator"
+# Admins listed by email; stored usernames are the email slug, so slug them too.
+c.Authenticator.admin_users = {_slug(x) for x in os.environ.get("ADMIN_USERS", "").split(",") if x.strip()}
+c.Authenticator.allow_all = True  # JupyterHub 5 defaults to deny-all; identity is trusted via the token
 
 # ── Persist hub state on a named volume ────────────────────────────────────
 c.JupyterHub.db_url = "sqlite:////srv/jupyterhub/jupyterhub.sqlite"
