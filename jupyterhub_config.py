@@ -19,6 +19,17 @@ c.DockerSpawner.cpu_limit = float(os.environ.get("CPU_LIMIT", "1.0"))
 c.DockerSpawner.volumes = {"jupyterhub-user-{username}": "/home/jovyan/work"}
 c.DockerSpawner.notebook_dir = "/home/jovyan/work"
 
+# ── Inject a shared, spend-capped LLM key into every student container ──────
+# The LLM capstones (genai-llms, prompt-engineering, generative-ai, ai-coding)
+# read os.environ["DEEPSEEK_API_KEY"] directly — students don't paste a key.
+# Set DEEPSEEK_API_KEY (a SPEND-CAPPED key) in the hub's env on the VPS.
+_spawn_env = {}
+_ds_key = os.environ.get("DEEPSEEK_API_KEY")
+if _ds_key:
+    _spawn_env["DEEPSEEK_API_KEY"] = _ds_key
+    _spawn_env["DEEPSEEK_API_URL"] = os.environ.get("DEEPSEEK_API_URL", "https://api.deepseek.com/v1")
+c.DockerSpawner.environment = _spawn_env
+
 # ── Hub reachability from the spawned containers ───────────────────────────
 c.JupyterHub.hub_ip = "0.0.0.0"
 c.JupyterHub.hub_connect_ip = os.environ.get("HUB_CONNECT_IP", "jupyterhub")

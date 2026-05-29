@@ -26,6 +26,9 @@ services:
       - HUB_API_TOKEN=${HUB_API_TOKEN:-}
       - PUBLIC_URL=${PUBLIC_URL:-}
       - LAB_LAUNCH_SECRET=${LAB_LAUNCH_SECRET:-}
+      # Spend-capped DeepSeek key injected into student lab containers (LLM capstones).
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - DEEPSEEK_API_URL=${DEEPSEEK_API_URL:-https://api.deepseek.com/v1}
     networks:
       - default
     # No published host port — reachable only via Traefik (https://lab.bytek.tech).
